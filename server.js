@@ -1,8 +1,26 @@
-var express = require('express')
-var app = express()
+var express = require('express');
+var app = express();
+var MongoClient = require('mongodb').MongoClient;
+var mongourl = 'mongodb://anson:password01@ds249824.mlab.com:49824/random-lunch-list';
+var assert = require('assert');
  
 app.get('/', function (req, res) {
-  res.send('Hello World')
-})
+	MongoClient.connect(mongourl, function(err, database) {
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		cursor = myDB.collection("restaurant").find({ name: "aaa" });
+		var returnObject = [];
+		cursor.each(function(err, doc) {
+			console.log("vvvv whyyyy");
+			console.log(doc);
+			assert.equal(err, null);
+			if (doc != null) {
+				returnObject.push(doc);
+            } else {
+            	res.send(returnObject);
+            }
+		});
+	});
+});
  
 app.listen(process.env.PORT || 8099);
