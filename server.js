@@ -9,17 +9,27 @@ var jsonParser = bodyParser.json();
 var cors = require('cors')
 app.use(cors());
  
-app.get('/getFullList', function (req, res) {
+app.get('/getFullList/:order', function (req, res) {
+	console.log("whyyyy");
+	var order = req.params.order;
+	console.log(order);
 	MongoClient.connect(mongourl, function(err, database) {
 		const myDB = database.db('random-lunch-list');
 		assert.equal(err, null);
-		cursor = myDB.collection("restaurant").find().sort({properties : 1, order: 1 });
+		var sort = {};
+		if(order="true"){
+			sort = {name : 1 };
+		}else{
+			sort = {properties : 1, order: 1 };
+		}
+		cursor = myDB.collection("restaurant").find().sort(sort);
 		var returnObject = [];
 		cursor.each(function(err, doc) {
 			assert.equal(err, null);
 			if (doc != null) {
 				returnObject.push(doc);
             } else {
+            	database.close();
             	res.send(returnObject);
             }
 		});
@@ -37,6 +47,7 @@ app.get('/getUser', function (req, res) {
 			if (doc != null) {
 				returnObject.push(doc);
             } else {
+            	database.close();
             	res.send(returnObject);
             }
 		});
@@ -58,6 +69,7 @@ app.post('/updateFullList', jsonParser, function (req, res) {
 					counter++;
 					if(counter==obj["fullListLength"]){
 						console.log(counter);
+						database.close();
 						res.send("ok");
 					}
 				});
@@ -65,5 +77,49 @@ app.post('/updateFullList', jsonParser, function (req, res) {
 	    }
 	});
 });
- 
+
+app.post('/reset', jsonParser, function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		myDB.collection("restaurant").updateMany({},{$set:{"properties":"notPicked","order":0}}, function(err, result) {
+			assert.equal(err, null);
+			database.close();
+			res.send("ok");
+		});
+	});
+});
+
+app.post('/delete', jsonParser, function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		var obj = req.body;
+		var myquery = { name: { $in: obj } };
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		myDB.collection("restaurant").deleteMany(myquery, function(err, result) {
+			assert.equal(err, null);
+			database.close();
+			res.send("ok");
+		});
+	});
+});
+
+app.post('/add', jsonParser, function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		var obj = req.body;
+		var array = obj.text.split("\n")
+		var dbObj = [];
+		for(var i in array){
+			dbObj.push({name:array[i],properties:"notPicked",order:0});
+		}
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		myDB.collection("restaurant").insertMany(dbObj, function(err, result) {
+			assert.equal(err, null);
+			database.close();
+			res.send("ok");			
+		});
+	});
+});
+
 app.listen(process.env.PORT || 8099);
