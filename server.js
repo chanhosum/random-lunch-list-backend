@@ -11,7 +11,7 @@ app.get('/getFullList', function (req, res) {
 	MongoClient.connect(mongourl, function(err, database) {
 		const myDB = database.db('random-lunch-list');
 		assert.equal(err, null);
-		cursor = myDB.collection("restaurant").find();
+		cursor = myDB.collection("restaurant").find().sort({properties : 1, order: 1 });
 		var returnObject = [];
 		cursor.each(function(err, doc) {
 			assert.equal(err, null);
