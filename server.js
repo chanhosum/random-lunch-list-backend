@@ -23,5 +23,22 @@ app.get('/getFullList', function (req, res) {
 		});
 	});
 });
+
+app.get('/getUser', function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		cursor = myDB.collection("user").find();
+		var returnObject = [];
+		cursor.each(function(err, doc) {
+			assert.equal(err, null);
+			if (doc != null) {
+				returnObject.push(doc);
+            } else {
+            	res.send(returnObject);
+            }
+		});
+	});
+});
  
 app.listen(process.env.PORT || 8099);
