@@ -17,7 +17,7 @@ app.get('/getFullList/:order', function (req, res) {
 		const myDB = database.db('random-lunch-list');
 		assert.equal(err, null);
 		var sort = {};
-		if(order="true"){
+		if(order=="true"){
 			sort = {name : 1 };
 		}else{
 			sort = {properties : 1, order: 1 };
