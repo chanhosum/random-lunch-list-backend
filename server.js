@@ -206,7 +206,7 @@ app.get('/getHistory', function (req, res) {
 			assert.equal(err, null);
 			if (doc != null) {
 				var time = doc.time;
-				var a = new Date(time+28800);
+				var a = new Date(time+28800000);
 				var months = ['1','2','3','4','5','6','7','8','9','10','11','12'];
 				var year = a.getFullYear();
 				var month = months[a.getMonth()];
