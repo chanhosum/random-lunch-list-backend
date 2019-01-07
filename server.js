@@ -88,7 +88,7 @@ app.post('/updateFullList', jsonParser, function (req, res) {
 					console.log("key");
 					properties = key;
 				}
-				myDB.collection("restaurant").update({name:obj[key][i]},{$set:{"properties":properties,"order":i}}, function(err, result) {
+				myDB.collection("restaurant").update({name:obj[key][i]},{$set:{"properties":properties,"order":Number(i)}}, function(err, result) {
 					assert.equal(err, null);
 					counter++;
 					if(counter==obj["fullListLength"]){
