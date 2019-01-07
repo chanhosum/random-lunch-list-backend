@@ -36,6 +36,24 @@ app.get('/getFullList/:order', function (req, res) {
 	});
 });
 
+app.get('/getMemberList', function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		cursor = myDB.collection("user").find().sort({name : 1 });
+		var returnObject = [];
+		cursor.each(function(err, doc) {
+			assert.equal(err, null);
+			if (doc != null) {
+				returnObject.push(doc);
+            } else {
+            	database.close();
+            	res.send(returnObject);
+            }
+		});
+	});
+});
+
 app.get('/getUser', function (req, res) {
 	MongoClient.connect(mongourl, function(err, database) {
 		const myDB = database.db('random-lunch-list');
@@ -104,6 +122,30 @@ app.post('/delete', jsonParser, function (req, res) {
 	});
 });
 
+app.post('/deleteMember', jsonParser, function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		var obj = req.body;
+		var myquery = { name: { $in: obj } };
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		myDB.collection("user").deleteMany(myquery, function(err, result) {
+			assert.equal(err, null);
+			var counter = 0;
+			for(i in obj){
+				myDB.collection("restaurant").updateMany({properties:obj[i]},{$set:{"properties":"notPicked","order":0}}, function(err, result) {
+					assert.equal(err, null);
+					counter++;
+					if(counter==obj.length){
+						console.log(counter);
+						database.close();
+						res.send("ok");
+					}
+				});
+			}
+		});
+	});
+});
+
 app.post('/add', jsonParser, function (req, res) {
 	MongoClient.connect(mongourl, function(err, database) {
 		var obj = req.body;
@@ -122,4 +164,17 @@ app.post('/add', jsonParser, function (req, res) {
 	});
 });
 
+app.post('/addMember', jsonParser, function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		var obj = req.body;
+		var name = obj.text;
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		myDB.collection("user").insert({name:name}, function(err, result) {
+			assert.equal(err, null);
+			database.close();
+			res.send("ok");			
+		});
+	});
+});
 app.listen(process.env.PORT || 8099);
