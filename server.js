@@ -78,17 +78,35 @@ app.post('/updateFullList', jsonParser, function (req, res) {
 		assert.equal(err, null);
 		var obj = req.body;
 		var counter = 0;
-		console.log(obj);
 		for (var key in obj) {
 			for(var i in obj[key]){
-				console.log(obj[key][i]);
-				myDB.collection("restaurant").update({name:obj[key][i]},{$set:{"properties":key,"order":i}}, function(err, result) {
+				var properties = "";
+				if(obj["pickOk"]!=null&&obj[key][i]==obj["pickOk"]){
+					console.log("piclok");
+					properties = "picked";
+				}else{
+					console.log("key");
+					properties = key;
+				}
+				myDB.collection("restaurant").update({name:obj[key][i]},{$set:{"properties":properties,"order":i}}, function(err, result) {
 					assert.equal(err, null);
 					counter++;
 					if(counter==obj["fullListLength"]){
 						console.log(counter);
-						database.close();
-						res.send("ok");
+						if(obj["pickOk"]!=null){
+							var historyObj = {
+								name: obj["pickOk"],
+								time: new Date().getTime()
+							}
+							myDB.collection("history").insert(historyObj,function(err, result) {
+								assert.equal(err, null);
+								database.close();
+								res.send("ok");			
+							});
+						}else{
+							database.close();
+							res.send("ok");
+						}
 					}
 				});
 			}
@@ -174,6 +192,50 @@ app.post('/addMember', jsonParser, function (req, res) {
 			assert.equal(err, null);
 			database.close();
 			res.send("ok");			
+		});
+	});
+});
+
+app.get('/getHistory', function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		cursor = myDB.collection("history").find().sort({time:-1});//.limit(3).skip(3);
+		var returnObject = [];
+		cursor.each(function(err, doc) {
+			assert.equal(err, null);
+			if (doc != null) {
+				var time = doc.time;
+				var a = new Date(time);
+				var months = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+				var year = a.getFullYear();
+				var month = months[a.getMonth()];
+				var date = a.getDate();
+				var hour = a.getHours();
+				var min = a.getMinutes();
+				var sec = a.getSeconds();
+				var days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']; 
+				var dayNum = a.getDay();
+				var result = days[dayNum];
+				var time = year+"年"+month+"月"+date+'日'+" "+hour + ':' + min + ':' + sec +' '+result;
+				returnObject.push({name:doc.name,time:time,utc:doc.time});
+            } else {
+            	database.close();
+            	res.send(returnObject);
+            }
+		});
+	});
+});
+app.post('/deleteHistory', jsonParser, function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		var obj = req.body;
+		var time = obj.time;
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		myDB.collection("history").remove({time:Number(time)}, function(err, result) {
+			assert.equal(err, null);
+			database.close();
+			res.send("ok");
 		});
 	});
 });
