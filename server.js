@@ -114,6 +114,27 @@ app.post('/updateFullList', jsonParser, function (req, res) {
 	});
 });
 
+app.post('/eat', jsonParser, function (req, res) {
+	MongoClient.connect(mongourl, function(err, database) {
+		const myDB = database.db('random-lunch-list');
+		assert.equal(err, null);
+		var obj = req.body;
+		var name = obj.name;
+		myDB.collection("restaurant").update({name:name},{$set:{"properties":"picked","order":0}}, function(err, result) {
+			assert.equal(err, null);
+			var historyObj = {
+				name: name,
+				time: new Date().getTime()
+			}
+			myDB.collection("history").insert(historyObj,function(err, result) {
+				assert.equal(err, null);
+				database.close();
+				res.send("ok");	
+			});
+		});
+	});
+});
+
 app.post('/reset', jsonParser, function (req, res) {
 	MongoClient.connect(mongourl, function(err, database) {
 		const myDB = database.db('random-lunch-list');
