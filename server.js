@@ -141,8 +141,15 @@ app.post('/reset', jsonParser, function (req, res) {
 		assert.equal(err, null);
 		myDB.collection("restaurant").updateMany({},{$set:{"properties":"notPicked","order":0}}, function(err, result) {
 			assert.equal(err, null);
-			database.close();
-			res.send("ok");
+			var historyObj = {
+				name: "--重設--",
+				time: new Date().getTime()
+			}
+			myDB.collection("history").insert(historyObj,function(err, result) {
+				assert.equal(err, null);
+				database.close();
+				res.send("ok");	
+			});
 		});
 	});
 });
